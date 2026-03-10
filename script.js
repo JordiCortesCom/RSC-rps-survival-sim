@@ -4,6 +4,15 @@ const TYPES = {
     SCISSORS: 'scissors'
 };
 
+const CHART_COLORS = {
+    [TYPES.ROCK]: '#94a3b8',
+    [TYPES.PAPER]: '#f8fafc',
+    [TYPES.SCISSORS]: '#ef4444'
+};
+
+const MAX_HISTORY = 300;
+const SAMPLE_INTERVAL = 6;
+
 const EMOJIS = {
     [TYPES.ROCK]: '🪨',
     [TYPES.PAPER]: '📄',
@@ -77,6 +86,14 @@ class Simulation {
         this.speedMultiplier = 1;
         this.baseEntitySize = 24;
 
+        // Population chart
+        this.chartCanvas = document.getElementById('chartCanvas');
+        this.chartCtx = this.chartCanvas.getContext('2d');
+        this.chartCanvas.width = 220;
+        this.chartCanvas.height = 130;
+        this.populationHistory = [];
+        this.frameCount = 0;
+
         // Resize canvas to match container
         this.resize();
         window.addEventListener('resize', () => this.resize());
@@ -109,6 +126,7 @@ class Simulation {
 
         document.getElementById('btnReset').addEventListener('click', () => {
             this.entities = [];
+            this.populationHistory = [];
             this.updateStats();
         });
 
@@ -220,6 +238,128 @@ class Simulation {
         this.scissorsStat.textContent = scissors;
     }
 
+    recordPopulation() {
+        let rocks = 0, papers = 0, scissors = 0;
+        for (const ent of this.entities) {
+            if (ent.type === TYPES.ROCK) rocks++;
+            else if (ent.type === TYPES.PAPER) papers++;
+            else if (ent.type === TYPES.SCISSORS) scissors++;
+        }
+        this.populationHistory.push({ rock: rocks, paper: papers, scissors: scissors });
+        if (this.populationHistory.length > MAX_HISTORY) {
+            this.populationHistory.shift();
+        }
+    }
+
+    drawChart() {
+        const canvas = this.chartCanvas;
+        const ctx = this.chartCtx;
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        const history = this.populationHistory;
+
+        // Chart padding
+        const pad = { top: 14, right: 10, bottom: 18, left: 28 };
+        const chartW = w - pad.left - pad.right;
+        const chartH = h - pad.top - pad.bottom;
+
+        // Background
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, w, h, 8);
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, w, h, 8);
+        ctx.stroke();
+
+        // Title
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.font = 'bold 9px Outfit, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('POPULATION', pad.left, 3);
+
+        if (history.length < 2) return;
+
+        // Max value for Y scale (at least 1 to avoid division by zero)
+        let maxVal = 1;
+        for (const snap of history) {
+            maxVal = Math.max(maxVal, snap.rock, snap.paper, snap.scissors);
+        }
+
+        // Subtle grid lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = pad.top + chartH - (i / 4) * chartH;
+            ctx.beginPath();
+            ctx.moveTo(pad.left, y);
+            ctx.lineTo(pad.left + chartW, y);
+            ctx.stroke();
+        }
+
+        // Y-axis labels
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.font = '8px Outfit, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(maxVal, pad.left - 3, pad.top);
+        ctx.fillText(0, pad.left - 3, pad.top + chartH);
+
+        // Draw lines
+        const typeKeys = [
+            { key: 'rock', color: CHART_COLORS[TYPES.ROCK] },
+            { key: 'paper', color: CHART_COLORS[TYPES.PAPER] },
+            { key: 'scissors', color: CHART_COLORS[TYPES.SCISSORS] }
+        ];
+
+        const n = history.length;
+        for (const typeInfo of typeKeys) {
+            ctx.beginPath();
+            ctx.strokeStyle = typeInfo.color;
+            ctx.lineWidth = 1.5;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            for (let i = 0; i < n; i++) {
+                const x = pad.left + (i / (n - 1)) * chartW;
+                const y = pad.top + chartH - (history[i][typeInfo.key] / maxVal) * chartH;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+
+        // Legend (top-right corner of chart area)
+        const legendItems = [
+            { label: 'Rock', color: CHART_COLORS[TYPES.ROCK] },
+            { label: 'Paper', color: CHART_COLORS[TYPES.PAPER] },
+            { label: 'Scissors', color: CHART_COLORS[TYPES.SCISSORS] }
+        ];
+        const legendX = pad.left + chartW - 50;
+        let legendY = pad.top + 4;
+        ctx.font = '8px Outfit, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        for (const item of legendItems) {
+            ctx.strokeStyle = item.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(legendX, legendY);
+            ctx.lineTo(legendX + 10, legendY);
+            ctx.stroke();
+            ctx.fillStyle = item.color;
+            ctx.fillText(item.label, legendX + 13, legendY);
+            legendY += 12;
+        }
+    }
+
     loop() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -229,6 +369,12 @@ class Simulation {
             ent.update(this.canvas.width, this.canvas.height, this.speedMultiplier);
             ent.draw(this.ctx);
         }
+
+        this.frameCount = (this.frameCount + 1) % SAMPLE_INTERVAL;
+        if (this.frameCount === 0) {
+            this.recordPopulation();
+        }
+        this.drawChart();
 
         this.animationId = requestAnimationFrame(() => this.loop());
     }
