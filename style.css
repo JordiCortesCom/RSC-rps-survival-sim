@@ -246,3 +246,14 @@ input[type=range]::-webkit-slider-runnable-track {
         max-height: 40vh;
     }
 }
+
+/* Population Chart Overlay */
+.chart-overlay {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 220px;
+    height: 130px;
+    pointer-events: none;
+    border-radius: 8px;
+}
