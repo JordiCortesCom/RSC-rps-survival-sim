@@ -12,12 +12,36 @@
         <header>
             <h1>RPS Simulator</h1>
             <p>Watch the ancient battle unfold</p>
+            <div class="view-controls">
+                <button class="view-btn active" id="btnViewStandard" title="Standard view">
+                    <svg width="20" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0.5" y="0.5" width="19" height="13" rx="1.5" stroke="currentColor"/>
+                        <rect x="13" y="8" width="6" height="5" rx="1" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button class="view-btn" id="btnViewSplit" title="Split view">
+                    <svg width="20" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0.5" y="0.5" width="8.5" height="13" rx="1.5" stroke="currentColor"/>
+                        <rect x="11" y="0.5" width="8.5" height="13" rx="1.5" stroke="currentColor"/>
+                    </svg>
+                </button>
+                <button class="view-btn" id="btnViewInverted" title="Inverted view">
+                    <svg width="20" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0.5" y="0.5" width="19" height="13" rx="1.5" stroke="currentColor"/>
+                        <rect x="1" y="8" width="6" height="5" rx="1" fill="currentColor"/>
+                    </svg>
+                </button>
+            </div>
         </header>
 
         <main class="simulation-area">
-            <div class="canvas-container">
-                <canvas id="simCanvas"></canvas>
-                <canvas id="chartCanvas" class="chart-overlay"></canvas>
+            <div class="views-wrapper">
+                <div class="canvas-container sim-container">
+                    <canvas id="simCanvas"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartCanvas"></canvas>
+                </div>
             </div>
             
             <aside class="controls-panel glassmorphism">
