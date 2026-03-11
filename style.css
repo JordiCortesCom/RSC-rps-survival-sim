@@ -43,6 +43,45 @@ body {
 header {
     text-align: center;
     padding: 1rem 0;
+    position: relative;
+}
+
+/* View mode toggle buttons */
+.view-controls {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 0.375rem;
+}
+
+.view-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 8px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.view-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.view-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--accent);
+    color: #60a5fa;
 }
 
 header h1 {
@@ -66,9 +105,67 @@ header p {
     min-height: 0;
 }
 
+/* Views wrapper */
+.views-wrapper {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    position: relative;
+}
+
+/* Sim container */
+.sim-container {
+    flex: 1;
+}
+
+/* Chart container: default (standard mode) – small overlay bottom-right of sim */
+.chart-container {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 220px;
+    height: 130px;
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Split mode: gap between the two panels */
+.views-wrapper.view-split {
+    gap: 1.5rem;
+}
+
+/* Split and inverted modes: chart-container becomes a full panel */
+.view-split .chart-container,
+.views-wrapper.view-inverted .chart-container {
+    position: relative;
+    flex: 1;
+    bottom: auto;
+    right: auto;
+    width: auto;
+    height: auto;
+    pointer-events: auto;
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--glass-border);
+    overflow: hidden;
+}
+
+.views-wrapper.view-inverted .sim-container {
+    position: absolute;
+    flex: none;
+    bottom: 16px;
+    right: 16px;
+    width: 220px;
+    height: 220px;
+    z-index: 2;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
 /* Canvas Area */
 .canvas-container {
-    flex: 1;
     background: var(--bg-secondary);
     border-radius: 16px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -245,15 +342,11 @@ input[type=range]::-webkit-slider-runnable-track {
         width: 100%;
         max-height: 40vh;
     }
-}
 
-/* Population Chart Overlay */
-.chart-overlay {
-    position: absolute;
-    bottom: 16px;
-    right: 16px;
-    width: 220px;
-    height: 130px;
-    pointer-events: none;
-    border-radius: 8px;
+    .view-controls {
+        position: static;
+        transform: none;
+        justify-content: center;
+        margin-top: 0.5rem;
+    }
 }

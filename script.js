@@ -13,6 +13,10 @@ const CHART_COLORS = {
 const MAX_HISTORY = 300;
 const SAMPLE_INTERVAL = 6;
 
+// Base dimensions of the chart overlay (matches the CSS default in standard mode)
+const CHART_BASE_WIDTH = 220;
+const CHART_BASE_HEIGHT = 130;
+
 const EMOJIS = {
     [TYPES.ROCK]: '🪨',
     [TYPES.PAPER]: '📄',
@@ -89,14 +93,13 @@ class Simulation {
         // Population chart
         this.chartCanvas = document.getElementById('chartCanvas');
         this.chartCtx = this.chartCanvas.getContext('2d');
-        this.chartCanvas.width = 220;
-        this.chartCanvas.height = 130;
         this.populationHistory = [];
         this.frameCount = 0;
 
         // Resize canvas to match container
         this.resize();
-        window.addEventListener('resize', () => this.resize());
+        this.resizeChart();
+        window.addEventListener('resize', () => { this.resize(); this.resizeChart(); });
 
         // DOM Elements for UI
         this.rockStat = document.getElementById('rockCount');
@@ -113,7 +116,33 @@ class Simulation {
         this.canvas.height = container.clientHeight;
     }
 
+    resizeChart() {
+        const container = this.chartCanvas.parentElement;
+        this.chartCanvas.width = container.clientWidth || CHART_BASE_WIDTH;
+        this.chartCanvas.height = container.clientHeight || CHART_BASE_HEIGHT;
+    }
+
+    setViewMode(mode) {
+        const wrapper = document.querySelector('.views-wrapper');
+        wrapper.classList.remove('view-split', 'view-inverted');
+        if (mode === 'split') wrapper.classList.add('view-split');
+        else if (mode === 'inverted') wrapper.classList.add('view-inverted');
+
+        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+        const btnId = mode === 'standard' ? 'btnViewStandard'
+                    : mode === 'split'    ? 'btnViewSplit'
+                    :                       'btnViewInverted';
+        document.getElementById(btnId).classList.add('active');
+
+        // Wait for CSS to apply before reading container dimensions
+        requestAnimationFrame(() => { this.resize(); this.resizeChart(); });
+    }
+
     setupControls() {
+        document.getElementById('btnViewStandard').addEventListener('click', () => this.setViewMode('standard'));
+        document.getElementById('btnViewSplit').addEventListener('click', () => this.setViewMode('split'));
+        document.getElementById('btnViewInverted').addEventListener('click', () => this.setViewMode('inverted'));
+
         document.getElementById('btnSpawnRock').addEventListener('click', () => this.spawnEntities(TYPES.ROCK, 10));
         document.getElementById('btnSpawnPaper').addEventListener('click', () => this.spawnEntities(TYPES.PAPER, 10));
         document.getElementById('btnSpawnScissors').addEventListener('click', () => this.spawnEntities(TYPES.SCISSORS, 10));
@@ -261,8 +290,16 @@ class Simulation {
 
         const history = this.populationHistory;
 
+        // Scale factor relative to original CHART_BASE_WIDTH×CHART_BASE_HEIGHT size, capped at 3×
+        const scale = Math.min(w / CHART_BASE_WIDTH, h / CHART_BASE_HEIGHT, 3);
+
         // Chart padding
-        const pad = { top: 14, right: 10, bottom: 18, left: 28 };
+        const pad = {
+            top:    Math.round(14 * scale),
+            right:  Math.round(10 * scale),
+            bottom: Math.round(18 * scale),
+            left:   Math.round(28 * scale)
+        };
         const chartW = w - pad.left - pad.right;
         const chartH = h - pad.top - pad.bottom;
 
@@ -281,10 +318,10 @@ class Simulation {
 
         // Title
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.font = 'bold 9px Outfit, sans-serif';
+        ctx.font = `bold ${Math.round(9 * scale)}px Outfit, sans-serif`;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText('POPULATION', pad.left, 3);
+        ctx.fillText('POPULATION', pad.left, Math.round(3 * scale));
 
         if (history.length < 2) return;
 
@@ -307,11 +344,11 @@ class Simulation {
 
         // Y-axis labels
         ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-        ctx.font = '8px Outfit, sans-serif';
+        ctx.font = `${Math.round(8 * scale)}px Outfit, sans-serif`;
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText(maxVal, pad.left - 3, pad.top);
-        ctx.fillText(0, pad.left - 3, pad.top + chartH);
+        ctx.fillText(maxVal, pad.left - Math.round(3 * scale), pad.top);
+        ctx.fillText(0, pad.left - Math.round(3 * scale), pad.top + chartH);
 
         // Draw lines
         const typeKeys = [
@@ -324,7 +361,7 @@ class Simulation {
         for (const typeInfo of typeKeys) {
             ctx.beginPath();
             ctx.strokeStyle = typeInfo.color;
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = Math.max(1, 1.5 * scale);
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
             for (let i = 0; i < n; i++) {
@@ -342,21 +379,21 @@ class Simulation {
             { label: 'Paper', color: CHART_COLORS[TYPES.PAPER] },
             { label: 'Scissors', color: CHART_COLORS[TYPES.SCISSORS] }
         ];
-        const legendX = pad.left + chartW - 50;
-        let legendY = pad.top + 4;
-        ctx.font = '8px Outfit, sans-serif';
+        const legendX = pad.left + chartW - Math.round(50 * scale);
+        let legendY = pad.top + Math.round(4 * scale);
+        ctx.font = `${Math.round(8 * scale)}px Outfit, sans-serif`;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         for (const item of legendItems) {
             ctx.strokeStyle = item.color;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = Math.max(1, 2 * scale);
             ctx.beginPath();
             ctx.moveTo(legendX, legendY);
-            ctx.lineTo(legendX + 10, legendY);
+            ctx.lineTo(legendX + Math.round(10 * scale), legendY);
             ctx.stroke();
             ctx.fillStyle = item.color;
-            ctx.fillText(item.label, legendX + 13, legendY);
-            legendY += 12;
+            ctx.fillText(item.label, legendX + Math.round(13 * scale), legendY);
+            legendY += Math.round(12 * scale);
         }
     }
 
